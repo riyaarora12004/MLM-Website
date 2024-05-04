@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopping Cart</title>
+<style>
+    /* Basic styling */
+    body {
+        font-family: Arial, sans-serif;
+    }
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .product {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 10px;
+        display: flex;
+        align-items: center; /* Align items to the right */
+        position: relative; /* Enable positioning for the button */
+    }
+    .product img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    .product .add-to-cart {
+        position: absolute;
+        top: 10px; /* Adjust top position */
+        right: 10px; /* Adjust right position */
+    }
+    .cart {
+        border: 1px solid #ccc;
+        margin-top: 20px;
+        padding: 10px;
+        display: none;
+    }
+    .cart table {
+        width: 100%;
+    }
+    .cart th, .cart td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .cart th {
+        background-color: #f2f2f2;
+    }
+    .total {
+        font-weight: bold;
+        text-align: right;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Products</h2>
+    <div class="products">
+        <div class="product">
+            <img src="products/arthofam.png" alt="Product 1">
+            <span>Arthofam - ₹10.00</span>
+            <button class="add-to-cart" onclick="addToCart('Arthofam', 10)">Add to Cart</button>
+        </div>
+        <div class="product">
+            <img src="products/famonity_Multiberries_capsule.png" alt="Product 2">
+            <span>Famonity Multiberries capsule - ₹10.00</span>
+            <button class="add-to-cart" onclick="addToCart('Famonity Multiberries Capsule', 10)">Add to Cart</button>
+        </div>
+        <div class="product">
+            <img src="products/nabhi_oil.png" alt="Product 3">
+            <span>Nabhi Oil - ₹10.00</span>
+            <button class="add-to-cart" onclick="addToCart('Nabhi Oil', 10)">Add to Cart</button>
+        </div>
+        <div class="product">
+            <img src="products/powermous.png" alt="Product 4">
+            <span>Powermous - ₹10.00</span>
+            <button class="add-to-cart" onclick="addToCart('Powermous', 10)">Add to Cart</button>
+        </div>
+        <!-- Add more products here -->
+    </div>
+    <div class="cart">
+        <h2>Shopping Cart</h2>
+        <table id="cartTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Cart items will be added dynamically here -->
+            </tbody>
+            <tfoot>
+                <tr class="total">
+                    <td colspan="3">Total:</td>
+                    <td id="totalAmount">₹0.00</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        <button onclick="checkout()">Checkout</button>
+    </div>
+</div>
+<script>
+    let cartItems = [];
+
+    function addToCart(productName, price) {
+        let existingItem = cartItems.find(item => item.productName === productName);
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cartItems.push({ productName, price, quantity: 1 });
+        }
+        updateCart();
+    }
+
+    function removeFromCart(index) {
+        const item = cartItems[index];
+        if (item.quantity > 1) {
+            item.quantity--;
+        } else {
+            cartItems.splice(index, 1);
+        }
+        updateCart();
+    }
+
+    function updateCart() {
+        const cartTableBody = document.querySelector('#cartTable tbody');
+        cartTableBody.innerHTML = '';
+        let totalAmount = 0;
+        cartItems.forEach((item, index) => {
+            const total = item.price * item.quantity;
+            totalAmount += total;
+            const row = `<tr>
+                            <td>${item.productName}</td>
+                            <td>₹${item.price.toFixed(2)}</td>
+                            <td>${item.quantity}</td>
+                            <td>₹${total.toFixed(2)}</td>
+                            <td><button onclick="removeFromCart(${index})">Remove</button></td>
+                        </tr>`;
+            cartTableBody.innerHTML += row;
+        });
+        document.getElementById('totalAmount').textContent = `₹${totalAmount.toFixed(2)}`;
+        if (cartItems.length > 0) {
+            document.querySelector('.cart').style.display = 'block';
+        } else {
+            document.querySelector('.cart').style.display = 'none';
+        }
+    }
+
+    function checkout() {
+        // Calculate total amount
+        let totalAmount = 0;
+        cartItems.forEach(item => {
+            totalAmount += item.price * item.quantity;
+        });
+
+        // Display total amount on the screen
+        alert(`Total amount: ₹${totalAmount.toFixed(2)}`);
+
+        // Prepare data to send to PHP script
+        const data = {
+            cartItems: cartItems,
+            totalAmount: totalAmount.toFixed(2) // Send total amount to PHP script
+        };
+        
+        // Send data to PHP script
+        fetch('checkout.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Network response was not ok.');
+        })
+        .then(message => {
+            alert(message); // Display response message
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+    }
+</script>
+</body>
+</html>
